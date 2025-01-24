@@ -8,10 +8,12 @@ from matplotlib.colors import ListedColormap
 import matplotlib.patches as mpatches
 
 from scipy.integrate import quad
-
 import graph
+import plotly.graph_objects as go
 
-def display_graph(madj,mblocs):
+def display_graph(G):
+  madj = G.adjacency_matrix
+  mblocs = G.blocs
   A = [list(mblocs[i]).index(1)+1 for i in range(len(mblocs))]
   A = np.array(A).T
 

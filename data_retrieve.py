@@ -1,5 +1,5 @@
 import numpy as np
-
+import graph
 
 def retrieve_political_data():
     #On commence par extraire des listes des blocs (liste_blog), des partis politiques (parti_politique), la matrice d'adjacence (X) ainsi que les estimateurs des paramètres de la loi multinomiale (pi)
@@ -60,4 +60,4 @@ def retrieve_political_data():
                     mu[k][k] = mu[k][k]/(pi[k]*len(Z_vrai)*(pi[k]*len(Z_vrai)-1))
                 else :
                     mu[k][l] = mu[k][l]/(pi[k]*len(Z_vrai)*(pi[l]*len(Z_vrai)))
-    return X, pi, mu
+    return graph.Graph(X,Z_vrai), pi, mu
