@@ -42,7 +42,7 @@ if estim_blocs:
     l_v=[] #liste des vraissemblances
     for i in range(5):
         print(f"---------Estimation {i+1}/5-------------")
-        result = polgraph.estim_blocs(10, debut_clusters = True, Nmax_glob=50, nmax_ptf=25, emax_pf = 0.001, emax_it=0.001, debug= False, debug_detail = True)
+        result = polgraph.estim_blocs(10, debut_clusters = True, Nmax_glob=50, nmax_ptf=25, emax_pf = 0.001, emax_it=0.001, debug= True, debug_detail = True)
         Z_estim=result[3]
         Z_tot.append(Z_estim)
         l_v.append(result[4])
