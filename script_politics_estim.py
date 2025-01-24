@@ -1,13 +1,14 @@
 import g_display
 import data_retrieve
 import graph
+import g_estim
 
 import os
 import pickle
 
 display_graph = False
 
-estim_blocs = False
+estim_blocs = True #estimer les blocs pour un nombre de blocs fixé à 10
 
 
 output_dir = os.path.join('C:', 'output')
@@ -37,15 +38,24 @@ if display_graph:
     g_display.display_graph(polgraph)
 
 if estim_blocs:
-    result = graph.estimate_graph(polgraph)
-    Z_estim=result[3]
+    Z_tot = []
+    l_v=[] #liste des vraissemblances
+    for i in range(5):
+        print(f"---------Estimation {i+1}/5-------------")
+        result = polgraph.estim_blocs(10, debut_clusters = True, Nmax_glob=50, nmax_ptf=25, emax_pf = 0.001, emax_it=0.001, debug= False, debug_detail = True)
+        Z_estim=result[3]
+        Z_tot.append(Z_estim)
+        l_v.append(result[4])
 
-    output_path_estimblocs = os.path.join(output_dir, 'estimatedblocs.pkl')
+    max, Z_best_estim = max(l_v), Z_tot[max.index(max(l_v))]
+    print("Meilleure vraisemblance : ", max)
+    
+    output_path_estimblocs10 = os.path.join(output_dir, 'estimatedblocs10.pkl')
 
-    with open(output_path_estimblocs, 'wb') as f:
-        pickle.dump(Z_estim, f)
+    with open(output_path_estimblocs10, 'wb') as f:
+        pickle.dump(Z_best_estim, f)
 
-    print(f'Estimated blocs saved to {output_path_estimblocs}')
+    print(f'Estimated blocs saved to {output_path_estimblocs10}')
 
     print('Graph estimated')
     g_display.display_graph(graph.Graph(polgraph.adjacency_matrix,Z_estim))

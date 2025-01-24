@@ -31,3 +31,4 @@ def test_betas():
     print(f"scores: {score}")
     plt.plot(B, score)
     plt.show()
+    return score
