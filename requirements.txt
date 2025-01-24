@@ -2,3 +2,5 @@ numpy
 scipy
 networkx
 plotly
+matplotlib
+scikit_learn

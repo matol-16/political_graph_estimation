@@ -185,12 +185,12 @@ class Graph:
                 V=ge.borne_inf(t_N,mu_N,pi_N,n,K,adjmat) #calcul de la vraissemblance
                 diff=V-V_old
 
-            if(diff<0):
-                print(f"vraissemblance non croissante pour l'itération {N}")
+                if(diff<0):
+                    print(f"vraissemblance non croissante pour l'itération {N}")
                 # break à mettre pour garder seulement les essais avec une vraisemblance croissante
-            if debug_detail:
-                print(f"Vraissemblance: {V}")
-            V_old=V
+                if debug_detail:
+                    print(f"Vraissemblance: {V}")
+                V_old=V
 
 
             #On incrémente le nombre d'itérations
@@ -213,7 +213,7 @@ class Graph:
                 print(f"nombre d'itérations maximal {Nmax_glob} dépassé pour l'algorithme général")
                 print(f"la diférence entre 2 itérations est : {np.linalg.norm(t_N-ancien_t)} en norme usuelle et {np.abs(t_N-ancien_t).max()} en norme max")
 
-            condition = False
+                condition = False
 
             #on arrête d'itérer si les valeurs de tau restent très proches les unes des autres
             #on a plusieurs options pour la norme: celle usuelle de numpy, ou la norme max:
