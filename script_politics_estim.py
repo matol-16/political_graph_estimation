@@ -47,15 +47,26 @@ if estim_blocs:
         Z_tot.append(Z_estim)
         l_v.append(result[4])
 
-    max, Z_best_estim = max(l_v), Z_tot[max.index(max(l_v))]
+    max = max(l_v)
+    Z_best_estim=Z_tot[l_v.index(max)]
     print("Meilleure vraisemblance : ", max)
     
-    output_path_estimblocs10 = os.path.join(output_dir, 'estimatedblocs10.pkl')
+    output_path_estimblocs10V2 = os.path.join(output_dir, 'estimatedblocs10V2.pkl')
 
-    with open(output_path_estimblocs10, 'wb') as f:
+    with open(output_path_estimblocs10V2, 'wb') as f:
         pickle.dump(Z_best_estim, f)
 
-    print(f'Estimated blocs saved to {output_path_estimblocs10}')
+    print(f'Estimated blocs saved to {output_path_estimblocs10V2}')
 
     print('Graph estimated')
     g_display.display_graph(graph.Graph(polgraph.adjacency_matrix,Z_estim))
+
+else:
+    output_path = os.path.join(output_dir, 'estimatedblocs10V2.pkl')
+    with open(output_path, 'rb') as f:
+        Z = pickle.load(f)
+
+    print('Political graph loaded successfully')
+    g_display.display_graph(graph.Graph(polgraph.adjacency_matrix,Z))
+    print(Z)
+

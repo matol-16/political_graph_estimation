@@ -97,7 +97,7 @@ def K_clust(k, X):
   mat = []
   #calcul k cluster à partir d'une matrice d'adjacence
 
-  kmeans = KMeans(n_clusters=k, n_init = 100).fit(X)
+  kmeans = KMeans(n_clusters=k, n_init = 50).fit(X)
   for i in range(len(kmeans.labels_)):
     mat.append(list(np.eye(k)[kmeans.labels_[i], :]))
 
