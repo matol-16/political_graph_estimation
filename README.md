@@ -1,4 +1,4 @@
-# Political graph estimaiton
+# Political graph estimaiton (encore en production)
 Ce repository est dédié à un projet académique à l'école Polytechnique. Il permet d'analyser les interactions politiques sur internet via un graphe aléatoire d'Erdös-Renyi.
 
 Le code est organisé de la façon suivante: 
