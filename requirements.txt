@@ -4,3 +4,5 @@ networkx
 plotly
 matplotlib
 scikit_learn
+plotly
+pandas

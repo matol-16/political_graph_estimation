@@ -5,9 +5,9 @@ from scipy.integrate import dblquad
 import networkx as nx
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+import pandas as pd
 
-import g_estim as ge
-
+from g_estim import *
 class Graph:
     def __init__(self, adjacency_matrix, blocs=None):
         self.adjacency_matrix = adjacency_matrix
@@ -18,6 +18,7 @@ class Graph:
             self.blocs = blocs
         self.blocs = blocs
         self.graph = self._create_graph()
+        self.estimated_blocs=None
 
     def _create_graph(self):
         graph = {}
@@ -48,7 +49,8 @@ class Graph:
 
         K = len(pi) #nombre de blocs 
         #on construir le vecteur décrivant le bloc d'appartenance de chaque sommet
-        Z = np.random.choice(K, size=n, p=pi)
+        labels = np.random.choice(K, size=n, p=pi)
+        Z= [[0 if j!=labels[i] else 1  for j in range(K)] for i in range(n)]
 
         #la matrice d'adjacence
         X = np.zeros((n, n))
@@ -57,11 +59,11 @@ class Graph:
         for i in range(n-1):
             for j in range(i+1, n):
                 #on récupère le paramètre de la loi binomiale du sommet Xij
-                p = mu[Z[i], Z[j]]
+                p = mu[labels[i], labels[j]]
                 #On procède à un tirage pour ce sommet
-                X[i, j] = np.random.binomial(1, p)
+                X[i][j] = np.random.binomial(1, p)
                 #On incrémente symétriquement la matrice d'adjacence
-                X[j, i] = X[i, j]
+                X[j][i] = X[i][j]
 
         return Graph(X, Z)
 
@@ -101,151 +103,174 @@ class Graph:
         #on en déduit la probabilité de lien entre u et v
 
         return mu[ind_triés[i],ind_triés[j]], l_cr, ind_triés
+
+
+    def estim_kk(self, K, Nmax_glob, nmax_ptf, emax):
     
-
-    def estim_blocs(self, K, t_0=None, debut_clusters = True, vraissemblance = True, pf_opti= True, Nmax_glob=50, nmax_ptf=50, emax_pf = 0.0001, emax_it=0.001, debug= False, debug_detail = False):
-        #estime les blocs du graphe self
-        
-        #Implémentation de l'algorithme de recherche de max de vraissemblance
-        #X: matrice d'adjacence
-        #t0 est une matrice de taille (K, n)
-        #Nmax le max d'itérations
-        #Nmax_glob le max d'itérations de la fonction de recherche de point fixe "maison" si elle est utilisée
-        #emax l'erreur acceptée pour le point fixe
-
-        adjmat=self.adjacency_matrix
-
-
-        n=self.num_vertices #le nombre de noeuds
-        N=0 #le compte des itérations
-        #On initialise nos variables à itérer
-        if(debut_clusters):
-            t_0 = ge.K_clust(K, adjmat)
-        t_N = t_0
+      "Implémentation de l'algorithme de recherche de max de vraissemblance"
+      #adjmat: matrice d'adjacence
+      #Nmax le max d'itérations
+      #Nmax_glob le max d'itérations de la fonction de recherche de point fixe "maison" si elle est utilisée
+      #emax l'erreur acceptée pour le point fixe"
+    
+      n = self.num_vertices #le nombre de noeuds
+      adjmat = self.adjacency_matrix
+      N = 0 #le compte des itérations
+    
+      #On initialise nos variables à itérer. On prend des 10^-16 à la place des 0 pour éviter les problèmes de logarithmes
+      t_N = K_clust(K, adjmat)
+      t_N[t_N == 0] = 10**(-16)
+    
+      #on initialise les mu et pi qu'on voudra estimer
+      mu_N=np.zeros((K,K))
+      pi_N=np.zeros(K)
+    
+      condition = True
+    
+      #on initialise la vraissemblance
+      V_old = -100000000000
+    
+      #on implémente une sorte de matrice creuse pour aller plus vite
+      adjmat_1= {i: [j for j, val in enumerate(row) if val != 0] for i, row in enumerate(adjmat)}
+      adjmat_0= {i: [j for j, val in enumerate(row) if val == 0] for i, row in enumerate(adjmat)}
+      adjmat_opti = [adjmat_0, adjmat_1]
+    
+      while(condition):
+        ancien_t = t_N
+    
+        #on met à jour les paramètres du modèle à blocs stochastiques suivant les FOC
+        pi_N = np.mean(t_N, axis=0)
+    
+        for q in range(K):
+          for l in range(K):
+              numerat = np.sum([t_N[i,q]*t_N[j,l]*adjmat[i][j] for i in range(n) for j in range(n) if j!= i])
+              denom = np.sum([t_N[i,q] * t_N[j,l] for i in range(n) for j in range(n) if j != i])
+              if(denom!=0):
+                mu_N[q,l] = numerat/denom
+              else:
+                 mu_N[q,l]=0
+    
+        #on fait attention à enlevr tous les 0 et 1 pour ne pas avoir de soucis dans nos logs, on utilise l'epsilon machine
+        mu_N[mu_N == 0] = 10**(-16)
+        mu_N[mu_N == 1] = 1 - 10**(-16)
+        pi_N[pi_N == 0] = 10**(-16)
+    
+        #on met à jour tau selon la méthode du point fixe décrit dans l'article
+        t_N = update_tau(pi_N, mu_N, t_N, adjmat_opti, nmax_ptf)
+    
+        #on remplace les 0 par 10^-16 pour éviter les problèmes de logarithmes dans les calcules
         t_N[t_N == 0] = 10**(-16)
-
-        #on initialise les mu et pi qu'on voudra estimer
-        mu_N=np.zeros((K,K))
-        pi_N=np.zeros(K)
-
-        condition = True
-
-        V_old = -100000000000
-
-        if pf_opti:
-            adjmat_1= {i: [j for j, val in enumerate(row) if val != 0] for i, row in enumerate(adjmat)}
-            adjmat_0= {i: [j for j, val in enumerate(row) if val == 0] for i, row in enumerate(adjmat)}
-            adjmat_opti = [adjmat_0, adjmat_1]
-
-        while(condition):
-            ancien_t = t_N
-
-            #on met à jour les paramètres du modèle à blocs stochastiques suivant les FOC
-
-            pi_N = np.mean(t_N, axis=0)
-
-            for q in range(K):
-                for l in range(K):
-                    numerat = np.sum([t_N[i,q]*t_N[j,l]*adjmat[i][j] for i in range(n) for j in range(n) if j!= i])
-                    denom = np.sum([t_N[i,q] * t_N[j,l] for i in range(n) for j in range(n) if j != i])
-                    if(denom!=0):
-                        mu_N[q,l] = numerat/denom
-                    else:
-                        mu_N[q,l]=0
-
-            mu_N[mu_N == 0] = 10**(-16)
-            mu_N[mu_N == 1] = 1 - 10**(-16)
-            pi_N[pi_N == 0] = 10**(-16)
-
-        
-            #On met ensuite à jour le paramètre définissant l'estimation de la fonction graphon:
-
-            #Pour cela, on doit implémenter un algo de recherche de point fixe:
-
-            #On recherche ensuite son point fixe (qui est le point fixe recherché à une constante près)
-
-            #Pour cela, on définit d'abord une fonction auxiliaire ne prenant que t en argument:
-
-            def tau_opti_aux(t):
-                return ge.tau_opti(pi_N,mu_N,t, adjmat)
-
-
-            #Puis on utilise notre fonction de recherche de point fixe:
-            #Ici on a le choix entre la méthode "maison" (ci dessous), et une fonction de la bibliothèque scipy.optimize :
-            #t_N=point_fixe(emax, tau_opti_aux, t_N, nmax_ptf)
-            #t_N = fixed_point(tau_opti_aux, t_N) #la fonction de la bibliothèque scipy.optimize
-            if pf_opti:
-                t_N = ge.update_tau(pi_N, mu_N, t_N, adjmat_opti, nmax_ptf, opti=True)
-            else:
-                t_N = ge.update_tau(pi_N, mu_N, t_N, adjmat, nmax_ptf, opti = False)
-
-            #on teste la croissance de la vraissemblance
-            t_N[t_N == 0] = 10**(-16)
-            if vraissemblance:
-                V=ge.borne_inf(t_N,mu_N,pi_N,n,K,adjmat) #calcul de la vraissemblance
-                diff=V-V_old
-
-                if(diff<0):
-                    print(f"vraissemblance non croissante pour l'itération {N}")
-                # break à mettre pour garder seulement les essais avec une vraisemblance croissante
-                if debug_detail:
-                    print(f"Vraissemblance: {V}")
-                V_old=V
-
-
-            #On incrémente le nombre d'itérations
-            N+=1
-
-            #on affiche que les itérations en dessous de 10 ou le smultipes de 10
-            if((not debug) and N%10==0):
-                print(f"itération {N}")
-
-
-            if(debug):
-                print(f"itération {N}")
-
-
-            if(debug_detail):
-                print(f"pi_N: {pi_N}")
-
-            #on arrête d'itérer après un nombre prédéfini d'itérations
-            if(N>=Nmax_glob):
-                print(f"nombre d'itérations maximal {Nmax_glob} dépassé pour l'algorithme général")
-                print(f"la diférence entre 2 itérations est : {np.linalg.norm(t_N-ancien_t)} en norme usuelle et {np.abs(t_N-ancien_t).max()} en norme max")
-
-                condition = False
-
-            #on arrête d'itérer si les valeurs de tau restent très proches les unes des autres
-            #on a plusieurs options pour la norme: celle usuelle de numpy, ou la norme max:
-            #if(np.linalg.norm(t_N-ancien_t)<emax_it): # norme usuelle de numpy
-            if vraissemblance:
-                if abs(diff)<emax_it:
-                    print(f"Convergence de la vraissemblance atteinte en {N} itération à un niveau de {emax_it}")
-                    condition=False
-
-            else:
-                if (np.abs(t_N-ancien_t)<emax_it).all(): #norme max
-                    print(f"Convergence atteinte en {N} itération à un niveau de {emax_it}")
-                    condition=False
-
-        #Enfin, on infère le bloc d'appartenance pour chaque noeud
-
-        Z_N = np.eye(n)[np.argmax(t_N, axis=1)][:,0:K]
-        print(f"Vraissemblance atteinte: {V}")
-
-        return pi_N, mu_N, t_N, Z_N, V
     
-    def find_blocs(self, N=15,random = True,Nmax_glob=30, nmax_ptf=50, emax_pf = 0.0001, emax_it=0.001, debug= False, debug_detail = False):
+        #calcul de la vraissemblance
+        V = borne_inf(t_N,mu_N,pi_N,n,K,adjmat) 
+          
+        diff=V-V_old
+        if(diff<0):
+          print(f"vraissemblance non croissante pour l'itération {N}")
+        V_old=V
+    
+        #On incrémente le nombre d'itérations
+        N+=1
+    
+        #on affiche les itérations multiples de 5
+        if(N%5==0):
+          print(f"itération {N} et vraissemblance = {V}")
+    
+        #on arrête d'itérer après un nombre prédéfini d'itérations
+        if(N>=Nmax_glob):
+          print(f"nombre d'itérations maximal {Nmax_glob} dépassé pour l'algorithme général")
+          print(f"la diférence entre 2 itérations est : {np.linalg.norm(t_N-ancien_t)} ")
+    
+          condition = False
+    
+        #on arrête d'itérer si les valeurs de la vraissemblance restent très proches les unes des autres
+        if abs(diff)<emax:
+          print(f"Convergence de la vraissemblance atteinte en {N} itération à un niveau de {emax}")
+          condition = False
+    
+      #Enfin, on infère le bloc d'appartenance pour chaque noeud
+      Z_N = np.eye(n)[np.argmax(t_N, axis=1)][:,0:K]
+      print(f"Vraissemblance atteinte: {V}")
+      self.estimated_blocs=Z_N
+    
+      return pi_N, mu_N, t_N, Z_N, V
+    
+    def estim_kk_MC(self, N_mt, K, Nmax_glob, nmax_ptf, emax):
+        "on calcul le clustering en K partie politique de notre jeu de donnée en lançant 10 fois l'algorithme"
+        "et en prenant la meilleure valeure d'ICL sur ces 10 performances"
+        Z_tot = []
+        likl = []
+        adjmat = self.adjacency_matrix
+        for l in range(N_mt):
+            print(f"Essai type Monte Carlo numéro:{l}")
+            pi_N, mu_N, t_N, Z_N, V = self.estim_kk(K, Nmax_glob , nmax_ptf , emax )
+            Z_tot.append(Z_N)
+            likl.append(ICL(K, pi_N, mu_N, t_N, Z_N, adjmat))
+        
+        #on récupère le meilleur essai
+        m, Z = max(likl), Z_tot[likl.index(max(likl))]
+        self.estimated_blocs=Z
+        print("La Vraissemblance atteinte est de ", m)
+        return m, Z
+
+    def estim_findK(self, Nmax_glob, nmax_pft, emax,N_mt=5):
         adjmat=self.adjacency_matrix
-        maxvrais = 0
-        indicemaxvrais = 0
-        n=self.num_vertices
-        resultats={0:None}
-        for K in range(4, N+1) :
-            (pi_N, mu_N, t_N, Z_N) = self.estim_blocs(K, Nmax_glob=30, nmax_ptf=50, emax_pf = 0.001, emax_it=0.0001, debug= False, debug_detail = False)
-            m = ge.ICL(K, pi_N, mu_N, t_N, Z_N)
-            resultats[K]=(pi_N, mu_N, t_N, Z_N)
-            if m>maxvrais :
-                m = maxvrais
-                indicemaxvrais = K
-        return maxvrais, indicemaxvrais, resultats
+        icl = []
+        Z_tot = []
+        for K in range(1, 14):
+            print(f"------------Estimation pour {K} blocs----------")
+            ICL, Z = self.estim_kk_MC(N_mt,K, Nmax_glob, nmax_pft, emax)
+            icl.append(ICL)
+            Z_tot.append(Z)
+        self.blocs = Z_tot[icl.index(max(icl))]
+        return icl, Z_tot[icl.index(max(icl))], (icl.index(max(icl)) + 1)
+    
+    def display_comp_table(self, colonne = None):
+        assert self.estimated_blocs is not None, "You must estimate the blocs first"
+        Z_vrai = self.blocs
+        best_Z = self.estimated_blocs
+
+
+        n = len(Z_vrai[0])
+        m = len(best_Z[0])
+
+        # Créer un tableau croisé pour compter les correspondances
+        tableau_croise_best = np.zeros((m,n), dtype = int)
+
+
+        # Remplir le tableau croisé
+        for j in range(m):
+            for i in range(len(best_Z)):  
+                if best_Z[i][j] == 1:  
+                    for k in range(n):  
+                        if Z_vrai[i][k] == 1:  
+                            tableau_croise_best[j][k] += 1
+
+
+        noms_colonnes = colonne if colonne is not None else [f"Vrai bloc{i+1}" for i in range(n)]
+
+        noms_lignes = [f"bloc attribué{j+1}" for j in range(m)]
+
+        # Conversion en DataFrame
+        df_tableau = pd.DataFrame(tableau_croise_best, columns=noms_colonnes, index=noms_lignes)
+
+        print("Tableau croisé avec noms des lignes et colonnes :")
+        print(df_tableau)
+        return df_tableau
+
+            
+    
+    # def find_blocs(self, N=15,random = True,Nmax_glob=30, nmax_ptf=50, emax_pf = 0.0001, emax_it=0.001, debug= False, debug_detail = False):
+    #     adjmat=self.adjacency_matrix
+    #     maxvrais = 0
+    #     indicemaxvrais = 0
+    #     n=self.num_vertices
+    #     resultats={0:None}
+    #     for K in range(4, N+1) :
+    #         (pi_N, mu_N, t_N, Z_N) = self.estim_blocs(K, Nmax_glob=30, nmax_ptf=50, emax_pf = 0.001, emax_it=0.0001, debug= False, debug_detail = False)
+    #         m = ICL(K, pi_N, mu_N, t_N, Z_N)
+    #         resultats[K]=(pi_N, mu_N, t_N, Z_N)
+    #         if m>maxvrais :
+    #             m = maxvrais
+    #             indicemaxvrais = K
+    #     return maxvrais, indicemaxvrais, resultats

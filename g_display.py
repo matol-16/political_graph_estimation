@@ -11,75 +11,81 @@ from scipy.integrate import quad
 import graph
 import plotly.graph_objects as go
 
-def display_graph(G):
-  madj = G.adjacency_matrix
-  mblocs = G.blocs
-  A = [list(mblocs[i]).index(1)+1 for i in range(len(mblocs))]
-  A = np.array(A).T
+def display_graph(G, take_blocs_estim=False, seed=20):
+    madj = G.adjacency_matrix
+    if take_blocs_estim:
+        mblocs= G.estimated_blocs
+    else:
+        mblocs = G.blocs
+    A = [list(mblocs[i]).index(1)+1 for i in range(len(mblocs))]
+    A = np.array(A).T
 
-  G = nx.from_numpy_array(madj)
-  pos = nx.spring_layout(G, k=0.2)
-  x_nodes = [pos[node][0] for node in G.nodes()]
-  y_nodes = [pos[node][1] for node in G.nodes()]
-  node_labels = [str(node) for node in G.nodes()]
+    G = nx.from_numpy_array(madj)
+    pos = nx.spring_layout(G, k=0.2)
+    x_nodes = [pos[node][0] for node in G.nodes()]
+    y_nodes = [pos[node][1] for node in G.nodes()]
+    node_labels = [str(node) for node in G.nodes()]
 
-  # 4. Catégoriser les nœuds par bloc selon la matrice Z
-  block_colors = {1: 'green', 2: 'blue', 3: 'lightblue', 4: 'red', 5: 'pink', 6: 'orange', 7: 'white', 8: 'yellow', 9: 'grey', 10: 'cyan'}  # Choisir les couleurs pour chaque bloc
-  node_colors = [block_colors[A[i]] for i in range(len(A))]  # Assigner les couleurs aux nœuds
-  block_colors = {i:block_colors[i] for i in block_colors if i<=len(mblocs)}
+    # 4. Catégoriser les nœuds par bloc selon la matrice Z
+    block_colors = {1: 'green', 2: 'blue', 3: 'lightblue', 4: 'red', 5: 'pink', 6: 'orange', 7: 'white', 8: 'yellow', 9: 'grey', 10: 'cyan'}  # Choisir les couleurs pour chaque bloc
+    node_colors = [block_colors[A[i]] for i in range(len(A))]  # Assigner les couleurs aux nœuds
+    block_colors = {i:block_colors[i] for i in block_colors if i<=len(mblocs)}
 
-  # 5. Visualiser le graphe avec NetworkX et Matplotlib
-  edges_x = []
-  edges_y = []
-  for edge in G.edges():
-      x0, y0 = pos[edge[0]]
-      x1, y1 = pos[edge[1]]
-      edges_x.append(x0)
-      edges_x.append(x1)
-      edges_y.append(y0)
-      edges_y.append(y1)
+    # 5. Visualiser le graphe avec NetworkX et Matplotlib
+    edges_x = []
+    edges_y = []
+    for edge in G.edges():
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edges_x.append(x0)
+        edges_x.append(x1)
+        edges_y.append(y0)
+        edges_y.append(y1)
 
-  # Créer un objet plotly pour les nœuds
-  node_trace = go.Scatter(
-      x=x_nodes,
-      y=y_nodes,
-      mode='markers+text',
-      hoverinfo='text',
-      marker=dict(
-          showscale=True,
-          colorscale='YlGnBu',  # Choisir une palette de couleurs
-          size=10,
-          color=node_colors,  # Affecter les couleurs aux nœuds
-          line_width=2
-      )
-  )
+    # Créer un objet plotly pour les nœuds
+    node_trace = go.Scatter(
+        x=x_nodes,
+        y=y_nodes,
+        mode='markers+text',
+        hoverinfo='text',
+        marker=dict(
+            showscale=True,
+            colorscale='YlGnBu',  # Choisir une palette de couleurs
+            size=10,
+            color=node_colors,  # Affecter les couleurs aux nœuds
+            line_width=2
+        )
+    )
 
-  # Créer un objet plotly pour les arêtes
-  edge_trace = go.Scatter(
-      x=edges_x,
-      y=edges_y,
-      line=dict(width=0.5, color='gray'),
-      hoverinfo='none',
-      mode='lines'
-  )
+    # Créer un objet plotly pour les arêtes
+    edge_trace = go.Scatter(
+        x=edges_x,
+        y=edges_y,
+        line=dict(width=0.5, color='gray'),
+        hoverinfo='none',
+        mode='lines'
+    )
 
 
+    if take_blocs_estim:
+        tit="Graphe des blocs estimés avec Légende"
+    else:
+        tit ="Graphe des blocs réels"
+    # Créer le graphique
+    fig = go.Figure(data=[edge_trace, node_trace],
+                    layout=go.Layout(
+                        showlegend=False,
+                        hovermode='closest',
+                        title =tit,
+                        xaxis=dict(showgrid=False, zeroline=False),
+                        yaxis=dict(showgrid=False, zeroline=False),
+                        plot_bgcolor='white',
+                        margin=dict(l=0, r=0, b=0, t=0),
 
-  # Créer le graphique
-  fig = go.Figure(data=[edge_trace, node_trace],
-                  layout=go.Layout(
-                      showlegend=False,
-                      hovermode='closest',
-                      title="Graphe Interactif avec Légende",
-                      xaxis=dict(showgrid=False, zeroline=False),
-                      yaxis=dict(showgrid=False, zeroline=False),
-                      plot_bgcolor='white',
-                      margin=dict(l=0, r=0, b=0, t=0),
+                    ))
 
-                  ))
-
-  # Afficher le graphe
-  fig.show()
+    # Afficher le graphe
+    fig.show()
 
 
 def display_graphon(mu,pi):
