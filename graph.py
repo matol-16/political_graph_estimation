@@ -128,9 +128,9 @@ class Graph:
       condition = True
     
       #on initialise la vraissemblance
-      V_old = -100000000000
+      V_old = -1e11
     
-      #on implémente une sorte de matrice creuse pour aller plus vite
+      #on implémente une  matrice creuse pour aller plus vite
       adjmat_1= {i: [j for j, val in enumerate(row) if val != 0] for i, row in enumerate(adjmat)}
       adjmat_0= {i: [j for j, val in enumerate(row) if val == 0] for i, row in enumerate(adjmat)}
       adjmat_opti = [adjmat_0, adjmat_1]
@@ -150,7 +150,7 @@ class Graph:
               else:
                  mu_N[q,l]=0
     
-        #on fait attention à enlevr tous les 0 et 1 pour ne pas avoir de soucis dans nos logs, on utilise l'epsilon machine
+        #on fait attention à enlever tous les 0 et 1 pour ne pas avoir de soucis dans nos logs, on utilise l'epsilon machine
         mu_N[mu_N == 0] = 10**(-16)
         mu_N[mu_N == 1] = 1 - 10**(-16)
         pi_N[pi_N == 0] = 10**(-16)
@@ -259,18 +259,3 @@ class Graph:
         return df_tableau
 
             
-    
-    # def find_blocs(self, N=15,random = True,Nmax_glob=30, nmax_ptf=50, emax_pf = 0.0001, emax_it=0.001, debug= False, debug_detail = False):
-    #     adjmat=self.adjacency_matrix
-    #     maxvrais = 0
-    #     indicemaxvrais = 0
-    #     n=self.num_vertices
-    #     resultats={0:None}
-    #     for K in range(4, N+1) :
-    #         (pi_N, mu_N, t_N, Z_N) = self.estim_blocs(K, Nmax_glob=30, nmax_ptf=50, emax_pf = 0.001, emax_it=0.0001, debug= False, debug_detail = False)
-    #         m = ICL(K, pi_N, mu_N, t_N, Z_N)
-    #         resultats[K]=(pi_N, mu_N, t_N, Z_N)
-    #         if m>maxvrais :
-    #             m = maxvrais
-    #             indicemaxvrais = K
-    #     return maxvrais, indicemaxvrais, resultats
