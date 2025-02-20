@@ -15,7 +15,7 @@ Le code est organisé de la façon suivante:
 
 - g_display permet d'afficher un graphe à partir de sa matrice d'adjacence
 
-Ce dépôt contient également, dans le dossier **rapports*, des documents décrivant le projet:
+Ce dépôt contient également, dans le dossier *rapports*, des documents décrivant le projet:
 
 - Le rapport final de ce projet, qui détaille les mathématiques sous-jacentes, les algorithmes employés et nos résultas
 
