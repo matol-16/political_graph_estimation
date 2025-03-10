@@ -15,7 +15,7 @@ Le code est organisé de la façon suivante:
 
 - g_estim contient des fonctions auxiliaires utilisées dans graph.py.
 
-Ce dépôt contient également, dans le dossier **rapports*, des documents décrivant le projet:
+Ce dépôt contient également, dans le dossier *rapports*, des documents décrivant le projet:
 
 - Le rapport final de ce projet, qui détaille les mathématiques sous-jacentes, les algorithmes employés et nos résultas
 
