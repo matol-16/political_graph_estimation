@@ -79,6 +79,11 @@ def borne_inf(t, mu, pi, n, K,adjmat):
 def ICL(K, pi_N, mu_N, t_N, Z_N, adjmat):
   "calcul de l'ICL qui nous permet d'estimer la qualité d'une approximation"
 
+  def log(x):
+    if x==0:
+        return 0
+    return np.log(x)
+
   n = len(adjmat[0])
   m = -K*(K+1)/4*log(n*(n-1)/2)-(K-1)/2*np.log(n) - n*np.log(n)
   l = np.sum(Z_N, axis = 0)

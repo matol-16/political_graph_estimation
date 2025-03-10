@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 from random import*
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,7 +17,7 @@ class Graph:
         self.adjacency_matrix = adjacency_matrix
         self.num_vertices = len(adjacency_matrix)
         if blocs is None:
-            self.blocs = np.ones((self.num_vertices, 1)) #un seul blocs = graphe standard
+            self.blocs = np.ones((self.num_vertices, 1)) #un seul bloc = graphe standard
         else:
             self.blocs = blocs
         self.blocs = blocs
@@ -105,7 +109,7 @@ class Graph:
         return mu[ind_triés[i],ind_triés[j]], l_cr, ind_triés
 
 
-    def estim_kk(self, K, Nmax_glob, nmax_ptf, emax):
+    def estim_kk(self, K, Nmax_glob, nmax_ptf, emax, depart = None):
     
       "Implémentation de l'algorithme de recherche de max de vraissemblance"
       #adjmat: matrice d'adjacence
@@ -114,12 +118,19 @@ class Graph:
       #emax l'erreur acceptée pour le point fixe"
     
       n = self.num_vertices #le nombre de noeuds
+ 
       adjmat = self.adjacency_matrix
       N = 0 #le compte des itérations
     
       #On initialise nos variables à itérer. On prend des 10^-16 à la place des 0 pour éviter les problèmes de logarithmes
       t_N = K_clust(K, adjmat)
+      if depart is not None:
+        t_N = depart #on choisir un point de départ prédéfini
+        
+
+
       t_N[t_N == 0] = 10**(-16)
+
     
       #on initialise les mu et pi qu'on voudra estimer
       mu_N=np.zeros((K,K))
@@ -195,15 +206,18 @@ class Graph:
     
       return pi_N, mu_N, t_N, Z_N, V
     
-    def estim_kk_MC(self, N_mt, K, Nmax_glob, nmax_ptf, emax):
+    def estim_kk_MC(self, N_mt, K, Nmax_glob, nmax_ptf, emax, depart = None):
         "on calcul le clustering en K partie politique de notre jeu de donnée en lançant 10 fois l'algorithme"
         "et en prenant la meilleure valeure d'ICL sur ces 10 performances"
+        if depart is not None:
+            N_mt=1
+            print("on part d'une valeur de départ prédéfinie. On fait donc 1 seul essai")
         Z_tot = []
         likl = []
         adjmat = self.adjacency_matrix
         for l in range(N_mt):
             print(f"Essai type Monte Carlo numéro:{l}")
-            pi_N, mu_N, t_N, Z_N, V = self.estim_kk(K, Nmax_glob , nmax_ptf , emax )
+            pi_N, mu_N, t_N, Z_N, V = self.estim_kk(K, Nmax_glob , nmax_ptf , emax, depart = depart)
             Z_tot.append(Z_N)
             likl.append(ICL(K, pi_N, mu_N, t_N, Z_N, adjmat))
         
@@ -213,16 +227,17 @@ class Graph:
         print("La Vraissemblance atteinte est de ", m)
         return m, Z
 
-    def estim_findK(self, Nmax_glob, nmax_pft, emax,N_mt=5):
+    def estim_findK(self, Nmax_glob, nmax_pft, emax,N_mt=5, Kmax = 14, depart=None):
         adjmat=self.adjacency_matrix
         icl = []
         Z_tot = []
-        for K in range(1, 14):
+        for K in range(1, Kmax+1):
             print(f"------------Estimation pour {K} blocs----------")
-            ICL, Z = self.estim_kk_MC(N_mt,K, Nmax_glob, nmax_pft, emax)
+            ICL, Z = self.estim_kk_MC(N_mt,K, Nmax_glob, nmax_pft, emax, depart= depart)
             icl.append(ICL)
             Z_tot.append(Z)
         self.blocs = Z_tot[icl.index(max(icl))]
+        print(f"Le nombre de blocs optimal est {icl.index(max(icl)) + 1}")
         return icl, Z_tot[icl.index(max(icl))], (icl.index(max(icl)) + 1)
     
     def display_comp_table(self, colonne = None):

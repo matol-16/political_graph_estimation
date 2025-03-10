@@ -1,5 +1,5 @@
 import g_display
-import data_retrieve
+import data_processing.data_retrieve as data_retrieve
 import graph
 import g_estim
 import g_display
@@ -84,7 +84,7 @@ if estim_blocs:
     with open(output_path_estimblocs10V3, 'wb') as f:
         pickle.dump(best_Z, f)
 
-    print(f'Estimated blocs saved to {output_path_estimblocs10V2}')
+    print(f'Estimated blocs saved to {output_path_estimblocs10V3}')
 
     print('Graph estimated')
     g_display.display_graph(graph.Graph(polgraph.adjacency_matrix,best_Z))

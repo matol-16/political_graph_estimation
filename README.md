@@ -9,11 +9,11 @@ Le code est organisé de la façon suivante:
 
 - le fichier graph contient la classe Graph qui code les fonctions permettant de simuler et d'estimer des graphes
 
-- estim_test contient les tests des estimations pour les beta-graphes (cf le rapport). C'est un premier test simple de fonctionnement de l'algorithme. Le fichier permet également d'effectuer les tests directement
+- beta_tests contient les tests des estimations pour les beta-graphes (cf le rapport). C'est un premier test simple de fonctionnement de l'algorithme. Le fichier permet également d'effectuer les tests directement
 
-- estim_polgraph contient la fonction qui implémente l'estimation des blocs du graphe des partis politiques sur le web
+- g_display permet d'afficher un graphe à partir de sa matrice d'adjacence, et contien les fonctions pour afficher les graphons d'un graphe labelisé
 
-- g_display permet d'afficher un graphe à partir de sa matrice d'adjacence
+- g_estim contient des fonctions auxiliaires utilisées dans graph.py.
 
 Ce dépôt contient également, dans le dossier **rapports*, des documents décrivant le projet:
 

@@ -11,7 +11,11 @@ from scipy.integrate import quad
 import graph
 import plotly.graph_objects as go
 
-def display_graph(G, take_blocs_estim=False, seed=20):
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+def display_graph(G, take_blocs_estim=False, seed=30):
     madj = G.adjacency_matrix
     if take_blocs_estim:
         mblocs= G.estimated_blocs
@@ -21,10 +25,9 @@ def display_graph(G, take_blocs_estim=False, seed=20):
     A = np.array(A).T
 
     G = nx.from_numpy_array(madj)
-    pos = nx.spring_layout(G, k=0.2)
+    pos = nx.spring_layout(G, k=0.2, seed = seed)
     x_nodes = [pos[node][0] for node in G.nodes()]
     y_nodes = [pos[node][1] for node in G.nodes()]
-    node_labels = [str(node) for node in G.nodes()]
 
     # 4. Catégoriser les nœuds par bloc selon la matrice Z
     block_colors = {1: 'green', 2: 'blue', 3: 'lightblue', 4: 'red', 5: 'pink', 6: 'orange', 7: 'white', 8: 'yellow', 9: 'grey', 10: 'cyan'}  # Choisir les couleurs pour chaque bloc
@@ -46,7 +49,7 @@ def display_graph(G, take_blocs_estim=False, seed=20):
     node_trace = go.Scatter(
         x=x_nodes,
         y=y_nodes,
-        mode='markers+text',
+        mode='markers',
         hoverinfo='text',
         marker=dict(
             showscale=True,

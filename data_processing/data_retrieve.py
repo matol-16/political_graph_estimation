@@ -5,7 +5,7 @@ def retrieve_political_data():
     #On commence par extraire des listes des blocs (liste_blog), des partis politiques (parti_politique), la matrice d'adjacence (X) ainsi que les estimateurs des paramètres de la loi multinomiale (pi)
     #et des lois binomiales (mu) qui interviennent dans le modèle. Cela nous permet également de construire progresivement Z.
 
-    with open("blog.txt", 'r', encoding='utf-8') as fichier: #j'ai modifié légèrement le fichier txt, un 'PCF LCR" était ecrit sans le "-" dans la deuxième partie le 165
+    with open("data/blog.txt", 'r', encoding='utf-8') as fichier: #j'ai modifié légèrement le fichier txt, un 'PCF LCR" était ecrit sans le "-" dans la deuxième partie le 165
             contenu = fichier.readlines()[:1]
             contenu = " ".join(contenu)
             # Séparer les éléments par des virgules ou des lignes
